@@ -14,7 +14,7 @@ class TwitterClient(object):
         consumer_secret = os.environ['CONSUMER_SECRET']
         bearer_token = os.environ['BEARER_TOKEN']
         access_token = os.environ['ACCESS_TOKEN']
-        access_token_secret = os.environ['ACESS_TOKEN_SECRET']
+        access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
 
         try:
             self.api = tweepy.Client(bearer_token=bearer_token, consumer_key=consumer_key,

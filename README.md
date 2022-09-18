@@ -12,3 +12,6 @@ https://pypi.org/project/naive-bayes/
 
 ### IMPORTANT: Only v1 runs on Twitter **Essential** access level.
 ### The other versions need **Academic Research** access level.
+
+PREREQUISITES:
+- Is a premise export all keys, tokens and secrets as shell environment variables.
