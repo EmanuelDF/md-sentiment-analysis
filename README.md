@@ -10,8 +10,15 @@ https://pypi.org/project/textblob/
 The model for trainning is provided with _Naive Bayes_ Text Classifier.\
 https://pypi.org/project/naive-bayes/
 
-### IMPORTANT: Only v1 runs on Twitter **Essential** access level.
+### IMPORTANT: Only V1 runs on Twitter **Essential** access level.
 ### The other versions need **Academic Research** access level.
 
 PREREQUISITES:
 - Is a premise export all keys, tokens and secrets as shell environment variables.
+
+### V1
+Textblob with standard text processing configuration.
+### V2
+Authentication updated to Twitter API 2.0.
+### V3
+Textblob using Naive Bayes as a customised classifier.
