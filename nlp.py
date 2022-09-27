@@ -72,16 +72,16 @@ class NaturalLanguageProcessing:
             [unidecode.unidecode(palavra.lower().replace(" ", "")) for palavra in tokenizer.tokenize(stopwords)])
 
         stopwords = [
-                    'haha', 'ai', 'acho', 'nan', 'fica', 'vao', 'quer', 'queria', 'querer', 'achei', 'fica',
-                    'ficou', 'deixa', 'deixou', 'pra', 'to', 'vc', 'tá', 'pq', 'tô', 'ta', 'mt', 'pro', 'né', 'eh',
-                    'tbm', 'ja', 'ah', 'vcs', 'hj', 'so', 'mto', 'agr', 'oq', 'la', 'tou', 'td', 'voce', 'ne', 'obg',
-                    'tb', 'pra', 'to', 'vc', 'tá', 'pq', 'tô', 'ta', 'mt', 'pro', 'né', 'eh', 'tbm', 'ja', 'ah', 'vcs',
-                    'hj', 'so', 'mto', 'agr', 'oq', 'la', 'tou', 'td', 'voce', 'ne', 'obg', 'tb', 'pra', 'vc', 'pra',
-                    'to', 'os', 'rappi', 'vcs', 'nao', 'pq', 'mim', 'ai', 'ta', 'ja', 'ter', 'fazer', 'lá', 'deu',
-                    'dado', 'então', 'vou', 'vai', 'veze', 'ficar', 'tá', 'apena', 'apenas', 'melhor', 'cara', 'gente',
-                    'casa', 'pessoa', 'tocada', 'tava', 'falar', 'serum', 'gt', 'bts', 'ia', 'preciso', 'vox', 'fico',
-                    'sair', 'tomar', 'quase', 'conta', 'al', 'falar', 'falando', 'amo', 'amor'
-                    ]
+            'haha', 'ai', 'acho', 'nan', 'fica', 'vao', 'quer', 'queria', 'querer', 'achei', 'fica',
+            'ficou', 'deixa', 'deixou', 'pra', 'to', 'vc', 'tá', 'pq', 'tô', 'ta', 'mt', 'pro', 'né', 'eh',
+            'tbm', 'ja', 'ah', 'vcs', 'hj', 'so', 'mto', 'agr', 'oq', 'la', 'tou', 'td', 'voce', 'ne', 'obg',
+            'tb', 'pra', 'to', 'vc', 'tá', 'pq', 'tô', 'ta', 'mt', 'pro', 'né', 'eh', 'tbm', 'ja', 'ah', 'vcs',
+            'hj', 'so', 'mto', 'agr', 'oq', 'la', 'tou', 'td', 'voce', 'ne', 'obg', 'tb', 'pra', 'vc', 'pra',
+            'to', 'os', 'rappi', 'vcs', 'nao', 'pq', 'mim', 'ai', 'ta', 'ja', 'ter', 'fazer', 'lá', 'deu',
+            'dado', 'então', 'vou', 'vai', 'veze', 'ficar', 'tá', 'apena', 'apenas', 'melhor', 'cara', 'gente',
+            'casa', 'pessoa', 'tocada', 'tava', 'falar', 'serum', 'gt', 'bts', 'ia', 'preciso', 'vox', 'fico',
+            'sair', 'tomar', 'quase', 'conta', 'al', 'falar', 'falando', 'amo', 'amor'
+        ]
 
         portuguese_english_stopwords.extend(
             [unidecode.unidecode(palavra.lower().replace(" ", "")) for palavra in stopwords])
@@ -160,7 +160,7 @@ class NaturalLanguageProcessing:
                                                                          keep='first',
                                                                          inplace=False).sort_index(inplace=False)
 
-            df['full_text_clean'] = df['full_text'].apply(str).apply(lambda x: self.processamentoGeral(x))
+            df['full_text_clean'] = df['full_text'].apply(str).apply(lambda x: self.preProcessing(x))
             df['full_text_len'] = df['full_text_clean'].astype(str).apply(len)
             df['full_text_word_count'] = df['full_text_clean'].apply(lambda x: len(str(x).split()))
 
@@ -172,36 +172,20 @@ class NaturalLanguageProcessing:
             else:
                 df.to_csv(directory + cvs_output, sep=';', encoding='utf-8', mode='a', header=False)
 
-    def generateWordFrequencyDictionary(self, periodo, diretorio):
-        """_summary_
-
-        Args:
-            periodo (str): _description_
-            diretorio (str): _description_
-        """
-        arquivoDepressao = f'{diretorio}twitterTextos_tweets_depressao_{periodo}.csv'
-        arquivoControle = f'{diretorio}twitterTextos_tweets_controle_{periodo}.csv'
-
+    def generateWordFrequencyDictionary(self):
+        path_and_name = 'resource/test'
         chunksize = 10 ** 5
+        fileCounter = Counter()
+        df_file = pd.read_csv(f'{path_and_name}.csv', sep=';', encoding='utf-8', usecols=['full_text_clean'],
+                              iterator=True, chunksize=chunksize)
 
-        counterDepressao = Counter()
-        counterControle = Counter()
+        for i, df in enumerate(df_file):
+            print(f'{i + 1}')
+            fileCounter.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
 
-        dfDeprpessao = pd.read_csv(arquivoDepressao, sep=';', encoding='utf-8', usecols=['full_text_clean'],
-                                   iterator=True, chunksize=chunksize)
-        dfControle = pd.read_csv(arquivoControle, sep=';', encoding='utf-8', usecols=['full_text_clean'], iterator=True,
-                                 chunksize=chunksize)
+        with open(f'{path_and_name}.pickle', 'wb') as f:
+            pickle.dump(fileCounter, f, protocol=pickle.HIGHEST_PROTOCOL)
 
-        for i, df in enumerate(dfDeprpessao):
-            print(f'{periodo} dfDeprpessao parte {i + 1}')
-            counterDepressao.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
 
-        with open(f'{periodo}_counterDepressao.pickle', 'wb') as f:
-            pickle.dump(counterDepressao, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-        for i, df in enumerate(dfControle):
-            print(f'{periodo} dfControle parte {i + 1}')
-            counterControle.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
-
-        with open(f'{periodo}_counterControle.pickle', 'wb') as f:
-            pickle.dump(counterControle, f, protocol=pickle.HIGHEST_PROTOCOL)
+if __name__ == '__main__':
+    NaturalLanguageProcessing()
