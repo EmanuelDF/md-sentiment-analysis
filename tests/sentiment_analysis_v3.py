@@ -12,11 +12,11 @@ query = '"nome social" place_country:BR lang:pt -is:retweet'
 class TwitterClient(object):
 
     def __init__(self):
-        consumer_key = os.environ['CONSUMER_KEY']
-        consumer_secret = os.environ['CONSUMER_SECRET']
-        bearer_token = os.environ['BEARER_TOKEN']
-        access_token = os.environ['ACCESS_TOKEN']
-        access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
+        consumer_key = 'Jmy9okdqHF0IBhod161AdUkON'
+        consumer_secret = 'rfw4YS3RxbKgLhKUgHMOaBlUJIpvo04bWltA9psnSwskbs5kfs'
+        bearer_token = 'AAAAAAAAAAAAAAAAAAAAAB%2FIhAEAAAAAtOxOwYXnYs35NZtGn3XwrwkUcNs%3DDksIZfLd3ZhVL71eQlOT0O8BhrmNC4vNXCSADBMsmeFv2UmSAB'
+        access_token = '28834098-vSBRwvgw4DMLJ09pkSlXOpsOJk3VAqBKEa4EpEFnQ'
+        access_token_secret = '8X2v1cK8vOQDxUxigDkSPvQdzeruS6SuFeFyUTPo40vup'
 
         try:
             self.api = tweepy.Client(bearer_token=bearer_token, consumer_key=consumer_key,

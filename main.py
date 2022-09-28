@@ -24,7 +24,8 @@ class NaturalLanguageProcessing:
         nltk.download('punkt', quiet=True)
         self.wl = WordNetLemmatizer
 
-    def getStopwords(self) -> list:
+    @staticmethod
+    def getStopwords() -> list:
         portuguese_english_stopwords = []
         portuguese_english_stopwords.extend([unidecode.unidecode(word.lower().replace(" ", "")) for word in
                                              nltk.corpus.stopwords.words('portuguese')])
@@ -91,11 +92,13 @@ class NaturalLanguageProcessing:
 
         return portuguese_english_stopwords
 
-    def removeStopwords(self, text, stopwords) -> str:
+    @staticmethod
+    def removeStopwords(text, stopwords) -> str:
         a = [i for i in text.split() if i not in stopwords]
         return ' '.join(a)
 
-    def normalize(self, text) -> str:
+    @staticmethod
+    def normalize(text) -> str:
         text = text.lower().strip()
         text = re.compile('<.*?>').sub('', text)
         text = re.compile('[%s]' % re.escape(string.punctuation)).sub(' ', text)
@@ -122,7 +125,8 @@ class NaturalLanguageProcessing:
         text = re.sub(r'[^\u0061-\u007A\u0020]', ' ', text)
         return text
 
-    def categorize(self, token) -> str:
+    @staticmethod
+    def categorize(token) -> str:
         if token.startswith('J'):
             return wordnet.ADJ
         elif token.startswith('V'):
@@ -137,7 +141,7 @@ class NaturalLanguageProcessing:
     def lemmatize(self, text) -> str:
         token = word_tokenize(text)
         word_pos_tags = nltk.pos_tag(token)
-        a = [self.wl.lemmatize(tag[0], self.obter_pos_tag(tag[1])) for idx, tag in
+        a = [self.wl.lemmatize(tag[0], self.categorize(tag[1])) for idx, tag in
              enumerate(word_pos_tags)]
         return " ".join(a)
 
@@ -146,7 +150,7 @@ class NaturalLanguageProcessing:
 
         cleaned_text = self.normalize(cleaned_text)
         cleaned_text = self.removeStopwords(cleaned_text, stopwords)
-        cleaned_text = self.lematize(cleaned_text)
+        cleaned_text = self.lemmatize(cleaned_text)
 
         return cleaned_text
 
@@ -175,17 +179,21 @@ class NaturalLanguageProcessing:
     def generateWordFrequencyDictionary(self):
         path_and_name = 'resource/test'
         chunksize = 10 ** 5
-        fileCounter = Counter()
+        file_counter = Counter()
         df_file = pd.read_csv(f'{path_and_name}.csv', sep=';', encoding='utf-8', usecols=['full_text_clean'],
                               iterator=True, chunksize=chunksize)
 
         for i, df in enumerate(df_file):
             print(f'{i + 1}')
-            fileCounter.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
+            file_counter.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
 
-        with open(f'{path_and_name}.pickle', 'wb') as f:
-            pickle.dump(fileCounter, f, protocol=pickle.HIGHEST_PROTOCOL)
+        # with open(f'{path_and_name}.pickle', 'wb') as f:
+        #     pickle.dump(fileCounter, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
-    NaturalLanguageProcessing()
+    sentiment_analysis = NaturalLanguageProcessing()
+    tweets = pd.read_csv('resource/test.csv', error_bad_lines=False, engine='python')
+    for tweet in tweets:
+        sentiment_analysis.preProcessing(tweet)
+    print('Finished')
