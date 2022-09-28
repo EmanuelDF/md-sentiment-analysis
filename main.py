@@ -10,7 +10,6 @@ from wordcloud.wordcloud import STOPWORDS
 import re
 import string
 import unidecode
-import pickle
 from collections import Counter
 
 
@@ -192,8 +191,11 @@ class NaturalLanguageProcessing:
 
 
 if __name__ == '__main__':
+    tweets = pd.read_csv('resource/test.csv', engine='python', error_bad_lines=False,
+                         names=['text', 'sentiment'], header=1)
+
     sentiment_analysis = NaturalLanguageProcessing()
-    tweets = pd.read_csv('resource/test.csv', error_bad_lines=False, engine='python')
-    for tweet in tweets:
-        sentiment_analysis.preProcessing(tweet)
+    for tweet in tweets['text']:
+        tweet = sentiment_analysis.preProcessing(tweet)
+        sentiment_analysis.categorize(tweet)
     print('Finished')
