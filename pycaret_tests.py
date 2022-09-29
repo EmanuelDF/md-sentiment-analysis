@@ -15,5 +15,4 @@ if __name__ == '__main__':
     evaluate_model(best)
 
     # predictions = predict_model(best, data = test)
-
     # save_model(best, 'actual_model')

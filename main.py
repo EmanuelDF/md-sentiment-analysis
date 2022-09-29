@@ -1,13 +1,9 @@
-import os
-import pickle
 import re
 import string
-from collections import Counter
 
 import nltk
+import numpy as np
 import pandas as pd
-import sns as sns
-import tqdm
 import unidecode
 from matplotlib import pyplot as plt
 from nltk.corpus import wordnet
@@ -152,46 +148,10 @@ class NLP:
 
     def preProcessing(self, cleaned_text) -> str:
         stopwords = self.getStopwords()
-        cleaned_text = self.normalize(cleaned_text)
+        # cleaned_text = self.normalize(cleaned_text)
         cleaned_text = self.removeStopwords(cleaned_text, stopwords)
         # cleaned_text = self.lemmatize(cleaned_text)
         return cleaned_text
-
-    def createBDText(self, cvs_input, cvs_output, directory):
-        usecols = ['created_at', 'id', 'id_screen_name', 'screen_name', 'full_text']
-        for user in tqdm.tqdm(cvs_input):
-            df = pd.read_csv(user, sep=';',
-                             usecols=usecols,
-                             index_col='created_at',
-                             parse_dates=['created_at']).drop_duplicates(subset='id',
-                                                                         keep='first',
-                                                                         inplace=False).sort_index(inplace=False)
-
-            df['full_text_clean'] = df['full_text'].apply(str).apply(lambda x: self.preProcessing(x))
-            df['full_text_len'] = df['full_text_clean'].astype(str).apply(len)
-            df['full_text_word_count'] = df['full_text_clean'].apply(lambda x: len(str(x).split()))
-
-            df.drop_duplicates(subset='id', keep='first', inplace=True)
-            df.rename_axis('created_at').reset_index(inplace=True)
-
-            if not os.path.isfile(directory + cvs_output):
-                df.to_csv(directory + cvs_output, sep=';', encoding='utf-8')
-            else:
-                df.to_csv(directory + cvs_output, sep=';', encoding='utf-8', mode='a', header=False)
-
-    def generateWordFrequencyDictionary(self):
-        path_and_name = 'resource/test'
-        chunksize = 10 ** 5
-        file_counter = Counter()
-        df_file = pd.read_csv(f'{path_and_name}.csv', sep=';', encoding='utf-8', usecols=['full_text_clean'],
-                              iterator=True, chunksize=chunksize)
-
-        for i, df in enumerate(df_file):
-            print(f'{i + 1}')
-            file_counter.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
-
-        with open(f'{path_and_name}.pickle', 'wb') as f:
-            pickle.dump(file_counter, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def training(self):
         model = pd.read_csv('resource/model.csv', engine='python', error_bad_lines=False,
@@ -201,10 +161,60 @@ class NLP:
             array[0] = self.preProcessing(array[0])
         return NaiveBayesClassifier(train.__array__())
 
+    @staticmethod
+    def get_tweet_sentiment(testimonial):
+        if testimonial.sentiment.polarity > 0:
+            return 'positive'
+        elif testimonial.sentiment.polarity < 0:
+            return 'negative'
+        else:
+            return 'neutral'
+
+    @staticmethod
+    def analyse_sentiment(tweets):
+        results = []
+        for a in tweets:
+            parsed_tweet = {}
+            tweet = sentiment_analysis.preProcessing(a[1])
+            testimonial = TextBlob(tweet, classifier=trained_classifier)
+            parsed_tweet['text'] = tweet
+            parsed_tweet['sentiment'] = sentiment_analysis.get_tweet_sentiment(testimonial)
+            results.append(parsed_tweet)
+            polarity_arr.append(testimonial.sentiment.polarity)
+            subjectivity_arr.append(testimonial.sentiment.subjectivity)
+
+        trained_classifier.show_informative_features()
+        return results
+
+    def show_results(self):
+        ptweets = [tweet for tweet in results if tweet['sentiment'] == 'positive']
+        print("Positives tweets: {} %".format(100 * len(ptweets) / len(tweets)))
+        ntweets = [tweet for tweet in results if tweet['sentiment'] == 'negative']
+        print("Negatives tweets: {} %".format(100 * len(ntweets) / len(tweets)))
+        print("Neutral tweets: {} %".format(100 * (len(tweets) - len(ntweets) - len(ptweets)) / len(tweets)))
+        print(np.array(results))
+        test["Review_Polarity"] = polarity_arr
+        test["Review_Subjectivity"] = subjectivity_arr
+        print(test)
+        print('positive_count:', len(ptweets))
+        print('negative_count:', len(ntweets))
+        ptweetspie = 100 * len(ptweets) / len(tweets)
+        ntweetspie = 100 * len(ntweets) / len(tweets)
+        neutraltweetspie = 100 * (len(tweets) - len(ntweets) - len(ptweets)) / len(tweets)
+        sizes = [ptweetspie, ntweetspie, neutraltweetspie]
+        labels = 'Positives tweets', 'Negatives tweets', 'Neutral tweets'
+        explode = (0, 0.1, 0.1)
+        fig1, ax1 = plt.subplots()
+        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+                shadow=True, startangle=90)
+        ax1.axis('equal')
+        print('Pie-Chart representation:\n')
+        plt.show()
+
 
 if __name__ == '__main__':
-    nlp = NLP()
-    cl = nlp.training()
+    sentiment_analysis = NLP()
+    trained_classifier = sentiment_analysis.training()
 
     test = pd.read_csv('resource/test.csv', engine='python', error_bad_lines=False,
                        names=['#', 'text'], header=1, sep='|')
@@ -212,12 +222,6 @@ if __name__ == '__main__':
 
     polarity_arr = []
     subjectivity_arr = []
-    for a in tweets:
-        text = nlp.preProcessing(a[1])
-        testimonial = TextBlob(text, classifier=cl)
-        polarity_arr.append(testimonial.sentiment.polarity)
-        subjectivity_arr.append(testimonial.sentiment.subjectivity)
+    results = sentiment_analysis.analyse_sentiment(tweets)
 
-    test["Review_Polarity"] = polarity_arr
-    test["Review_Subjectivity"] = subjectivity_arr
-    print(test)
+    sentiment_analysis.show_results()
