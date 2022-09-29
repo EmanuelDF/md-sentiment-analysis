@@ -1,4 +1,5 @@
 import os
+import pickle
 import re
 import string
 from collections import Counter
@@ -189,29 +190,34 @@ class NLP:
             print(f'{i + 1}')
             file_counter.update(word_tokenize(' '.join(df['full_text_clean'].astype(str).tolist())))
 
-        # with open(f'{path_and_name}.pickle', 'wb') as f:
-        #     pickle.dump(fileCounter, f, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(f'{path_and_name}.pickle', 'wb') as f:
+            pickle.dump(file_counter, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def training(self):
+        model = pd.read_csv('resource/model.csv', engine='python', error_bad_lines=False,
+                            names=['text', 'sentiment'], header=1)
+        train = model.to_numpy()
+        for array in train:
+            array[0] = self.preProcessing(array[0])
+        return NaiveBayesClassifier(train.__array__())
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('resource/model.csv', engine='python', error_bad_lines=False,
-                     names=['text', 'sentiment'], header=1)
-    tweets = df.to_numpy()
-
     nlp = NLP()
-    for array in tweets:
-        array[0] = nlp.preProcessing(array[0])
+    cl = nlp.training()
 
-    cl = NaiveBayesClassifier(tweets.__array__())
+    test = pd.read_csv('resource/test.csv', engine='python', error_bad_lines=False,
+                       names=['#', 'text'], header=1, sep='|')
+    tweets = test.to_numpy()
+
     polarity_arr = []
     subjectivity_arr = []
     for a in tweets:
-        text = a[0]
-        testimonial = TextBlob(text, cl)
-        testimonial.sentiment
+        text = nlp.preProcessing(a[1])
+        testimonial = TextBlob(text, classifier=cl)
         polarity_arr.append(testimonial.sentiment.polarity)
         subjectivity_arr.append(testimonial.sentiment.subjectivity)
 
-    df["Review_Polarity"] = polarity_arr
-    df["Review_Subjectivity"] = subjectivity_arr
-    print(df)
+    test["Review_Polarity"] = polarity_arr
+    test["Review_Subjectivity"] = subjectivity_arr
+    print(test)
