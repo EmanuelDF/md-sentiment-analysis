@@ -1,19 +1,24 @@
-import tqdm
 import os
-import pandas as pd
+import re
+import string
+from collections import Counter
+
 import nltk
+import pandas as pd
+import sns as sns
+import tqdm
+import unidecode
+from matplotlib import pyplot as plt
 from nltk.corpus import wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from spacy.lang.pt.stop_words import STOP_WORDS
+from textblob import TextBlob
+from textblob.classifiers import NaiveBayesClassifier
 from wordcloud.wordcloud import STOPWORDS
-import re
-import string
-import unidecode
-from collections import Counter
 
 
-class NaturalLanguageProcessing:
+class NLP:
 
     def __init__(self):
         nltk.download('stopwords', quiet=True)
@@ -146,11 +151,9 @@ class NaturalLanguageProcessing:
 
     def preProcessing(self, cleaned_text) -> str:
         stopwords = self.getStopwords()
-
         cleaned_text = self.normalize(cleaned_text)
         cleaned_text = self.removeStopwords(cleaned_text, stopwords)
-        cleaned_text = self.lemmatize(cleaned_text)
-
+        # cleaned_text = self.lemmatize(cleaned_text)
         return cleaned_text
 
     def createBDText(self, cvs_input, cvs_output, directory):
@@ -191,11 +194,24 @@ class NaturalLanguageProcessing:
 
 
 if __name__ == '__main__':
-    tweets = pd.read_csv('resource/test.csv', engine='python', error_bad_lines=False,
-                         names=['text', 'sentiment'], header=1)
+    df = pd.read_csv('resource/model.csv', engine='python', error_bad_lines=False,
+                     names=['text', 'sentiment'], header=1)
+    tweets = df.to_numpy()
 
-    sentiment_analysis = NaturalLanguageProcessing()
-    for tweet in tweets['text']:
-        tweet = sentiment_analysis.preProcessing(tweet)
-        sentiment_analysis.categorize(tweet)
-    print('Finished')
+    nlp = NLP()
+    for array in tweets:
+        array[0] = nlp.preProcessing(array[0])
+
+    cl = NaiveBayesClassifier(tweets.__array__())
+    polarity_arr = []
+    subjectivity_arr = []
+    for a in tweets:
+        text = a[0]
+        testimonial = TextBlob(text, cl)
+        testimonial.sentiment
+        polarity_arr.append(testimonial.sentiment.polarity)
+        subjectivity_arr.append(testimonial.sentiment.subjectivity)
+
+    df["Review_Polarity"] = polarity_arr
+    df["Review_Subjectivity"] = subjectivity_arr
+    print(df)
